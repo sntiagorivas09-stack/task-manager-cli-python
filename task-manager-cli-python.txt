@@ -1,0 +1,90 @@
+ARCHIVO_TAREAS = "tareas.json"
+import json 
+import os    
+
+class Tarea:  
+    def __init__(self, descripcion: str, completada: bool =False):
+        self.descripcion = descripcion  
+        self.completada = completada    
+
+    def marcar_completada(self):  
+        self.completada = True
+
+    def to_dict(self) -> dict:  
+        return {
+            "descripcion": self.descripcion,
+            "completada": self.completada
+         }
+
+    @staticmethod
+    def from_dict(data: dict) -> "Tarea":  
+        return Tarea(
+            descripcion=data.get("descripcion", ""),
+            completada=data.get("completada", False)
+        )
+
+def cargar_tareas(archivo: str = ARCHIVO_TAREAS) -> list[Tarea]:
+    if not os.path.exists(archivo):
+        return[]
+    
+    try: 
+        with open(archivo, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return[Tarea.from_dict(t) for t in data]
+    except json.JSONDecodeError:
+        print("Archivo corrupto. Se creo una lista nueva.")
+        return[]
+
+def guardar_tareas(tareas: list[Tarea], archivo: str = ARCHIVO_TAREAS): 
+    data = [t.to_dict() for t in tareas]  
+    with open(archivo, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)  
+
+def mostrar_menu():  
+    print("\nGestor de Tareas")
+    print("1. Agregar tarea")
+    print("2. Listar tareas")
+    print("3. Marcar tarea como completada")
+    print("4. Eliminar tarea")
+    print("5. Salir")
+
+def main():  
+    tareas = cargar_tareas()  
+    while True:  
+        mostrar_menu()
+        opcion = input("Elige una opción: ") 
+        if opcion == "1":  
+            desc = input("Descripción de la tarea: ")
+            tareas.append(Tarea(desc)) 
+            guardar_tareas(tareas)
+            print("Tarea agregada.")
+        elif opcion == "2":
+            if not tareas:  
+                print("No hay tareas.")
+            else:
+                for i, t in enumerate(tareas):  
+                    estado = "Completada" if t.completada else "Pendiente"  
+                    print(f"{i+1}. {t.descripcion} - {estado}")
+        elif opcion == "3":
+            try:
+                num = int(input("Número de tarea: ")) - 1 
+                tareas[num].marcar_completada()
+                guardar_tareas(tareas)
+                print("Tarea marcada como completada.")
+            except (ValueError, IndexError):  
+                print("Número inválido.")
+        elif opcion == "4":
+            try:
+                num = int(input("Número de tarea: ")) - 1
+                del tareas[num] 
+                guardar_tareas(tareas)
+                print("Tarea eliminada.")
+            except (ValueError, IndexError):
+                print("Número inválido.")
+        elif opcion == "5":
+            break
+        else:
+            print("Opción inválida.")
+
+if __name__ == "__main__":  
+    main()
